@@ -13,41 +13,40 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type CounselorController struct {
-	service services.CounselorService
+type UserController struct {
+	service services.UserrService
 }
 
-func NewCounselorController(counselorService services.CounselorService) CounselorController {
-	return CounselorController{
-		service: counselorService,
+func NewUserController(counselorService services.UserrService) UserController {
+	return UserController{
+		service: userv cService,
 	}
 }
 
-func (c CounselorController) RegisterCounselor(ctx *gin.Context) {
+func (c UserController) RegisterCounselor(ctx *gin.Context) {
 	// リクエストボディを取得する
-	var counselorRegisterRequest dto.CounselorRegisterRequest
+	var userrRegisterRequest dto.UserRegisterRequest
 
-	if err := ctx.ShouldBindJSON(&counselorRegisterRequest); err != nil {
+	if err := ctx.ShouldBindJSON(&userrRegisterRequest); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	counselor := models.Counselor{
-		FirstName: counselorRegisterRequest.FirstName,
-		LastName:  counselorRegisterRequest.LastName,
-		Email:     counselorRegisterRequest.Email,
-		Password:  counselorRegisterRequest.Password,
+	user := models.User{
+		Username: userrRegisterRequest.Username,
+		Email:     userrRegisterRequest.Email,
+		Password:  userrRegisterRequest.Password,
 	}
 
-	// counselorを作成する
-	createdCounselor, err := c.service.RegisterCounselor(&counselor)
+	// userを作成する
+	createdUser, err := c.service.RegisterUser(&user)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// JWTトークンを発行する
-	token, err := auth.IssueCounselorToken(createdCounselor.ID, config.JWTSecretKey, config.JWTDuration)
+	token, err := auth.IssueUserToken(createdUser.ID, config.JWTSecretKey, config.JWTDuration)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -55,12 +54,12 @@ func (c CounselorController) RegisterCounselor(ctx *gin.Context) {
 
 	// レスポンスを返す
 	ctx.JSON(http.StatusCreated, gin.H{
-		"counselor": createdCounselor,
+		"user": createdUser,
 		"token":     token,
 	})
 }
 
-func (c *CounselorController) Login(ctx *gin.Context) {
+func (c *UserController) Login(ctx *gin.Context) {
 	// リクエストボディを取得する
 	var loginRequest dto.LoginRequest
 	if err := ctx.ShouldBindJSON(&loginRequest); err != nil {
@@ -69,7 +68,7 @@ func (c *CounselorController) Login(ctx *gin.Context) {
 	}
 
 	// counselorを検索する
-	counselor, err := c.service.Login(loginRequest.Email, loginRequest.Password)
+	user, err := c.service.Login(loginRequest.Email, loginRequest.Password)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -81,7 +80,7 @@ func (c *CounselorController) Login(ctx *gin.Context) {
 	}
 
 	// JWTトークンを発行する
-	token, err := auth.IssueCounselorToken(counselor.ID, config.JWTSecretKey, config.JWTDuration)
+	token, err := auth.IssueUserToken(user.ID, config.JWTSecretKey, config.JWTDuration)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -93,20 +92,20 @@ func (c *CounselorController) Login(ctx *gin.Context) {
 	})
 }
 
-func (c CounselorController) GetCounselor(ctx *gin.Context) {
-	counselorID := ctx.Param("counselorID")
+func (c UserController) GetUser(ctx *gin.Context) {
+	userID := ctx.Param("userID")
 	id, err := strconv.ParseUint(counselorID, 10, 64)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	counselor, err := c.service.GetCounselorByID(uint(id))
+	user, err := c.service.GetUserByID(uint(id))
 
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, counselor)
+	ctx.JSON(http.StatusOK, user)
 }
